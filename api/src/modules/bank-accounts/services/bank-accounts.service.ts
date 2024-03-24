@@ -6,6 +6,12 @@ import { BankAccountsRepository } from 'src/shared/database/repositories/bank-ac
 import { $Enums } from '@prisma/client';
 import { FindBankAccountOrFailService } from './find-bank-account-or-fail.service';
 
+type Transaction = {
+  id: string;
+  value: number;
+  type: $Enums.TransactionType;
+};
+
 @Injectable()
 export class BankAccountsService {
   constructor(
@@ -30,10 +36,27 @@ export class BankAccountsService {
     });
   }
 
-  findAllByUserId(userId: string) {
-    return this.bankAccountsRepository.findMany({
+  async findAllByUserId(userId: string) {
+    const bankAccounts = await this.bankAccountsRepository.findMany({
       where: { userId },
+      include: {
+        transactions: {
+          select: {
+            id: true,
+            value: true,
+            type: true,
+          },
+        },
+      },
     });
+
+    return bankAccounts.map((bankAccount) => ({
+      ...bankAccount,
+      currentBalance: this.calculateCurrentBalance(
+        bankAccount.transactions,
+        bankAccount.initialBalance,
+      ),
+    }));
   }
 
   async findOne(bankAccountId: string, userId: string) {
@@ -42,7 +65,13 @@ export class BankAccountsService {
       bankAccountId,
     );
 
-    return bankAccount;
+    return {
+      ...bankAccount,
+      currentBalance: this.calculateCurrentBalance(
+        bankAccount.transactions,
+        bankAccount.initialBalance,
+      ),
+    };
   }
 
   async update(
@@ -73,5 +102,18 @@ export class BankAccountsService {
     });
 
     return null;
+  }
+
+  private calculateCurrentBalance(
+    transactions: Transaction[],
+    initialBalance: number,
+  ): number {
+    return transactions.reduce(
+      (acc, transaction) =>
+        transaction.type === 'INCOME'
+          ? acc + transaction.value
+          : acc - transaction.value,
+      initialBalance,
+    );
   }
 }

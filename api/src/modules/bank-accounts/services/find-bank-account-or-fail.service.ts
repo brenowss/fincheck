@@ -13,6 +13,15 @@ export class FindBankAccountOrFailService {
         id: bankAccountId,
         userId,
       },
+      include: {
+        transactions: {
+          select: {
+            id: true,
+            value: true,
+            type: true,
+          },
+        },
+      },
     });
 
     if (!bankAccount) {
