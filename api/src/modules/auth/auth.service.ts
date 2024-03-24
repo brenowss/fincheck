@@ -34,7 +34,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const accessToken = await this.jwtService.signAsync({ sub: user.id });
+    const accessToken = await this.generateAccessToken(user.id);
 
     return { accessToken };
   }
@@ -79,9 +79,12 @@ export class AuthService {
       },
     });
 
-    return {
-      name: user.name,
-      email: user.email,
-    };
+    const accessToken = await this.generateAccessToken(user.id);
+
+    return { accessToken };
+  }
+
+  private generateAccessToken(userId: string) {
+    return this.jwtService.signAsync({ sub: userId });
   }
 }
