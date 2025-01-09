@@ -1,3 +1,18 @@
+import { useAuth } from "../../../app/hooks/useAuth";
+
 export default function Dashboard() {
-  return <h1>Dashboard</h1>;
+  const { signOut } = useAuth();
+
+  return (
+    <div>
+      <h1>Dashboard</h1>
+      <button
+        onClick={() => {
+          signOut();
+        }}
+      >
+        Sair
+      </button>
+    </div>
+  );
 }
